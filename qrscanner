@@ -1,0 +1,98 @@
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.NotFoundException;
+import com.google.zxing.ReaderException;
+import com.google.zxing.Result;
+import com.google.zxing.ResultMetadataType;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+
+public class EmployeeQRScanner extends JFrame {
+    
+    private static final long serialVersionUID = 1L;
+    
+    private JButton scanButton;
+    private JPanel contentPane;
+    private BufferedImage image;
+    
+    public EmployeeQRScanner() {
+        setTitle("Employee QR Scanner");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setBounds(100, 100, 450, 300);
+        contentPane = new JPanel();
+        contentPane.setLayout(new BorderLayout(0, 0));
+        setContentPane(contentPane);
+        
+        scanButton = new JButton("Scan QR Code");
+        scanButton.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Choose QR Code Image");
+                fileChooser.setFileFilter(new FileNameExtensionFilter("Image files", "png", "jpg", "jpeg"));
+                int result = fileChooser.showOpenDialog(EmployeeQRScanner.this);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    try {
+                        image = ImageIO.read(selectedFile);
+                        String decodedText = decodeQRCode(image);
+                        System.out.println("Decoded Text: " + decodedText);
+                        // Implement your employee authentication logic here
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (NotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        contentPane.add(scanButton, BorderLayout.CENTER);
+    }
+    
+    private static String decodeQRCode(BufferedImage qrCodeImage) throws NotFoundException {
+        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(qrCodeImage)));
+        Result qrCodeResult = null;
+        try {
+            qrCodeResult = new MultiFormatReader().decode(binaryBitmap);
+        } catch (ReaderException e) {
+            e.printStackTrace();
+        }
+        String decodedText = qrCodeResult.getText();
+        System.out.println("QR Code Format: " + qrCodeResult.getBarcodeFormat());
+        if (qrCodeResult.getResultMetadata() != null) {
+            System.out.println("QR Code Orientation: " + qrCodeResult.getResultMetadata().get(ResultMetadataType.ORIENTATION));
+        }
+        return decodedText;
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    EmployeeQRScanner frame = new EmployeeQRScanner();
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+}
